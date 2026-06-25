@@ -1,0 +1,21 @@
+{
+  "name": "bebio-api",
+  "version": "1.0.0",
+  "description": "Backend API for Bebio baby tracking app",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node src/database/migrations.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.1.0",
+    "firebase-admin": "^13.0.2",
+    "helmet": "^8.1.0",
+    "pg": "^8.13.1"
+  }
+}
