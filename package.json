@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "migrate": "node src/database/migrations.js",
     "db:reset": "node src/database/reset.js",
-    "db:fresh": "node src/database/reset.js --yes --migrate"
+    "db:fresh": "node src/database/reset.js --yes --migrate",
+    "extract:firebase": "node scripts/extract-firebase-credentials.js"
   },
   "dependencies": {
     "@paddle/paddle-node-sdk": "^2.8.0",

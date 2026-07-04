@@ -173,6 +173,47 @@ function resolveCheckoutPageUrl() {
   return `${base}/upgrade`;
 }
 
+function buildTransactionPayload({ priceId, userId, firebaseUid, plan, userEmail }) {
+  const payload = {
+    items: [{ priceId, quantity: 1 }],
+    customData: {
+      userId: String(userId),
+      firebaseUid,
+      planType: plan,
+    },
+    customerEmail: userEmail,
+  };
+
+  const checkoutUrl = process.env.WEB_CHECKOUT_URL?.trim();
+  if (!checkoutUrl) {
+    return payload;
+  }
+
+  try {
+    const hostname = new URL(checkoutUrl).hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return payload;
+    }
+  } catch {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    checkout: { url: resolveCheckoutPageUrl() },
+  };
+}
+
+function resolveTransactionCheckoutUrl(transaction) {
+  return (
+    transaction?.checkout?.url ||
+    transaction?.checkoutUrl ||
+    (transaction?.id
+      ? `https://checkout.paddle.com/checkout/${transaction.id}`
+      : null)
+  );
+}
+
 export const createCheckoutSession = async (req, res) => {
   let client;
   try {
@@ -218,18 +259,15 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
-    const checkoutPageUrl = resolveCheckoutPageUrl();
-
-    const transaction = await paddle.transactions.create({
-      items: [{ priceId, quantity: 1 }],
-      checkout: { url: checkoutPageUrl },
-      customData: {
-        userId: String(userId),
+    const transaction = await paddle.transactions.create(
+      buildTransactionPayload({
+        priceId,
+        userId,
         firebaseUid: req.user.firebase_uid,
-        planType: plan,
-      },
-      customerEmail: userEmail,
-    });
+        plan,
+        userEmail,
+      }),
+    );
 
     if (!transaction?.id) {
       client.release();
@@ -244,7 +282,7 @@ export const createCheckoutSession = async (req, res) => {
 
     client.release();
 
-    const checkoutUrl = transaction.checkout?.url;
+    const checkoutUrl = resolveTransactionCheckoutUrl(transaction);
     if (!checkoutUrl) {
       return res.status(500).json({
         error: "Paddle checkout URL not available",
@@ -262,10 +300,22 @@ export const createCheckoutSession = async (req, res) => {
   } catch (error) {
     if (client) client.release();
     console.error("Error creating Paddle checkout:", error);
+
+    const paddleCode = error?.code;
+    if (paddleCode === "transaction_checkout_url_domain_is_not_approved") {
+      return res.status(400).json({
+        error: "Checkout domain not approved in Paddle",
+        message:
+          "Set Paddle → Checkout → Default payment link to https://bebeio-web-production.up.railway.app/upgrade, or set WEB_CHECKOUT_URL on the API to that exact origin.",
+        code: paddleCode,
+      });
+    }
+
     return res.status(500).json({
       error: "Failed to create checkout session",
       details:
         process.env.NODE_ENV !== "production" ? error?.message : undefined,
+      code: process.env.NODE_ENV !== "production" ? paddleCode : undefined,
     });
   }
 };

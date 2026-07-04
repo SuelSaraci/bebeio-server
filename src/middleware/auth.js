@@ -40,10 +40,24 @@ export const verifyFirebaseToken = async (req, res, next) => {
       client.release();
     }
   } catch (error) {
-    return res.status(401).json({
-      error: "Invalid auth token",
+    const code = error?.code || "";
+    if (code.startsWith("auth/")) {
+      return res.status(401).json({
+        error: "Invalid auth token",
+        details:
+          process.env.NODE_ENV === "production"
+            ? undefined
+            : String(error.message),
+      });
+    }
+
+    console.error("Auth middleware error:", error);
+    return res.status(500).json({
+      error: "Authentication failed",
       details:
-        process.env.NODE_ENV === "production" ? undefined : String(error.message),
+        process.env.NODE_ENV === "production"
+          ? undefined
+          : String(error.message),
     });
   }
 };
