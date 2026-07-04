@@ -137,6 +137,74 @@ export const runMigrations = async () => {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS push_tokens (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT UNIQUE NOT NULL,
+        platform TEXT NOT NULL CHECK (platform IN ('ios', 'android')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        paddle_subscription_id TEXT,
+        status TEXT NOT NULL DEFAULT 'inactive',
+        plan_type TEXT NOT NULL DEFAULT 'free',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      ALTER TABLE user_profiles
+      ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN DEFAULT TRUE
+    `);
+    await client.query(`
+      ALTER TABLE user_profiles
+      ADD COLUMN IF NOT EXISTS feeding_reminders BOOLEAN DEFAULT TRUE
+    `);
+    await client.query(`
+      ALTER TABLE user_profiles
+      ADD COLUMN IF NOT EXISTS evening_check_in BOOLEAN DEFAULT TRUE
+    `);
+    await client.query(`
+      ALTER TABLE user_profiles
+      ADD COLUMN IF NOT EXISTS health_reminders BOOLEAN DEFAULT TRUE
+    `);
+    await client.query(`
+      ALTER TABLE user_profiles
+      ADD COLUMN IF NOT EXISTS ai_messages_used INTEGER DEFAULT 0
+    `);
+
+    await client.query(`
+      ALTER TABLE appointments
+      ADD COLUMN IF NOT EXISTS done BOOLEAN DEFAULT FALSE
+    `);
+    await client.query(`
+      ALTER TABLE appointments
+      ADD COLUMN IF NOT EXISTS completed_date DATE
+    `);
+    await client.query(`
+      ALTER TABLE medical_notes
+      ADD COLUMN IF NOT EXISTS done BOOLEAN DEFAULT FALSE
+    `);
+    await client.query(`
+      ALTER TABLE medical_notes
+      ADD COLUMN IF NOT EXISTS completed_date DATE
+    `);
+
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON push_tokens(user_id)",
+    );
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id)",
+    );
+
     await client.query(
       "CREATE INDEX IF NOT EXISTS idx_feeding_entries_user_ts ON feeding_entries(user_id, timestamp DESC)",
     );

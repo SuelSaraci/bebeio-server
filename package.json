@@ -7,9 +7,12 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "migrate": "node src/database/migrations.js"
+    "migrate": "node src/database/migrations.js",
+    "db:reset": "node src/database/reset.js",
+    "db:fresh": "node src/database/reset.js --yes --migrate"
   },
   "dependencies": {
+    "@paddle/paddle-node-sdk": "^2.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

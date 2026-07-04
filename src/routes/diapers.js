@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pool from "../config/database.js";
 import { verifyFirebaseToken } from "../middleware/auth.js";
+import { freeTierLimit } from "../utils/freeTierLimit.js";
 
 const router = Router();
 router.use(verifyFirebaseToken);
@@ -26,7 +27,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", freeTierLimit("diaper_entries"), async (req, res) => {
   try {
     const data = req.body || {};
     if (!data.type || !data.timestamp) {

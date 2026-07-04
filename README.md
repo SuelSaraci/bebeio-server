@@ -2,7 +2,7 @@
 
 Backend for the Bebio baby tracking app. Auth and database setup mirror the reference `server/` project: **Firebase** for login/signup and **PostgreSQL on Railway** for data storage.
 
-Payments/subscriptions are intentionally omitted for now.
+**Bebio Plus** subscriptions are handled via **Paddle on the website** (same pattern as code-interview-app). The API stores subscription status and exposes it to the mobile app.
 
 ## Setup
 
@@ -63,7 +63,10 @@ Authorization: Bearer <firebase-id-token>
 | POST | `/api/health/appointments/bulk` | Replace all appointments |
 | GET/POST/DELETE | `/api/health/notes` | Medical notes |
 | GET/PUT | `/api/milestones` | Development milestones |
-| POST | `/api/milestones/bulk` | Replace all milestones |
+| POST | `/api/ai/chat` | AI assistant |
+| POST | `/api/subscriptions/create` | Create Paddle checkout (`{ plan: "monthly" \| "yearly" }`) |
+| GET | `/api/subscriptions/status` | Subscription status (`hasPremium`) |
+| POST | `/paddle/webhook` | Paddle webhooks (also `/api/webhooks/paddle`) |
 
 ## Deploy (Railway)
 

@@ -1,6 +1,8 @@
 import { Router } from "express";
 import pool from "../config/database.js";
 import { verifyFirebaseToken } from "../middleware/auth.js";
+import { freeTierLimit } from "../utils/freeTierLimit.js";
+import { formatDateOnly } from "../utils/formatDate.js";
 
 const router = Router();
 router.use(verifyFirebaseToken);
@@ -10,7 +12,7 @@ const formatMilestone = (row) => ({
   title: row.title,
   expectedWeeks: row.expected_weeks,
   done: row.done,
-  achievedDate: row.achieved_date || undefined,
+  achievedDate: formatDateOnly(row.achieved_date),
 });
 
 router.get("/", async (req, res) => {
@@ -26,9 +28,40 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.post("/", freeTierLimit("milestones"), async (req, res) => {
+  try {
+    const data = req.body || {};
+    if (!data.title?.trim()) {
+      return res.status(400).json({ error: "title is required" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO milestones (user_id, title, expected_weeks, done, achieved_date)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, title, expected_weeks, done, achieved_date`,
+      [
+        req.user.id,
+        data.title.trim(),
+        data.expectedWeeks || data.expected_weeks || "—",
+        Boolean(data.done),
+        data.achievedDate || data.achieved_date || null,
+      ],
+    );
+    return res.status(201).json({ milestone: formatMilestone(result.rows[0]) });
+  } catch {
+    return res.status(500).json({ error: "Failed to create milestone" });
+  }
+});
+
 router.put("/:id", async (req, res) => {
   try {
     const data = req.body || {};
+    const done = data.done;
+    const achievedDate =
+      done === false
+        ? null
+        : data.achievedDate || data.achieved_date || null;
+
     const result = await pool.query(
       `UPDATE milestones
        SET done = COALESCE($3, done),
@@ -36,7 +69,7 @@ router.put("/:id", async (req, res) => {
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $1 AND user_id = $2
        RETURNING id, title, expected_weeks, done, achieved_date`,
-      [req.params.id, req.user.id, data.done, data.achievedDate || data.achieved_date || null],
+      [req.params.id, req.user.id, done, achievedDate],
     );
     if (!result.rows.length) {
       return res.status(404).json({ error: "Milestone not found" });
@@ -44,6 +77,21 @@ router.put("/:id", async (req, res) => {
     return res.json({ milestone: formatMilestone(result.rows[0]) });
   } catch {
     return res.status(500).json({ error: "Failed to update milestone" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM milestones WHERE id = $1 AND user_id = $2 RETURNING id`,
+      [req.params.id, req.user.id],
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Milestone not found" });
+    }
+    return res.json({ success: true });
+  } catch {
+    return res.status(500).json({ error: "Failed to delete milestone" });
   }
 });
 

@@ -1,13 +1,15 @@
 import { Router } from "express";
 import pool from "../config/database.js";
 import { verifyFirebaseToken } from "../middleware/auth.js";
+import { freeTierLimit } from "../utils/freeTierLimit.js";
+import { formatDateOnly } from "../utils/formatDate.js";
 
 const router = Router();
 router.use(verifyFirebaseToken);
 
 const formatEntry = (row) => ({
   id: String(row.id),
-  date: row.date,
+  date: formatDateOnly(row.date),
   weight: row.weight != null ? Number(row.weight) : undefined,
   height: row.height != null ? Number(row.height) : undefined,
   headCirc: row.head_circ != null ? Number(row.head_circ) : undefined,
@@ -28,7 +30,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", freeTierLimit("growth_entries"), async (req, res) => {
   try {
     const data = req.body || {};
     if (!data.date) {

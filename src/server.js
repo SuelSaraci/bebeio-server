@@ -4,6 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import routes from "./routes/index.js";
+import { handleWebhook } from "./routes/subscriptions.js";
 import { runMigrations } from "./database/migrations.js";
 import "./config/firebase.js";
 
@@ -62,6 +63,16 @@ const authLimiter = rateLimit({
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+const webhookPaths = [
+  "/paddle/webhook",
+  "/paddie/webhook",
+  "/webhook/paddle",
+  "/api/webhooks/paddle",
+];
+for (const path of webhookPaths) {
+  app.post(path, express.raw({ type: "application/json" }), handleWebhook);
+}
 
 app.use(express.json({ limit: "2mb" }));
 app.use("/api", apiLimiter);

@@ -8,6 +8,9 @@ import diaperRoutes from "./diapers.js";
 import growthRoutes from "./growth.js";
 import healthRoutes from "./health.js";
 import milestoneRoutes from "./milestones.js";
+import aiRoutes from "./ai.js";
+import notificationRoutes from "./notifications.js";
+import subscriptionRoutes from "./subscriptions.js";
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use("/diapers", diaperRoutes);
 router.use("/growth", growthRoutes);
 router.use("/health", healthRoutes);
 router.use("/milestones", milestoneRoutes);
+router.use("/ai", aiRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/subscriptions", subscriptionRoutes);
 
 export default router;
