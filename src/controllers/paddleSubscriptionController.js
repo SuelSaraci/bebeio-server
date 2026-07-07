@@ -367,6 +367,86 @@ export const getSubscriptionStatus = async (req, res) => {
   }
 };
 
+export const cancelSubscription = async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+    const userResult = await client.query(
+      "SELECT id FROM users WHERE firebase_uid = $1",
+      [req.user.firebase_uid],
+    );
+
+    if (userResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userId = userResult.rows[0].id;
+    const subscriptionResult = await client.query(
+      `SELECT id, paddle_subscription_id, status
+       FROM subscriptions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (subscriptionResult.rows.length === 0) {
+      client.release();
+      return res.status(400).json({ error: "No active subscription found" });
+    }
+
+    const subscription = subscriptionResult.rows[0];
+    const status = normalize(subscription.status);
+    const activeLikeStatuses = ["active", "trialing", "past_due", "paused"];
+    if (!activeLikeStatuses.includes(status)) {
+      client.release();
+      return res.status(400).json({
+        error: "Subscription is not active",
+        status: subscription.status,
+      });
+    }
+
+    const paddleSubscriptionId = subscription.paddle_subscription_id;
+    if (paddleSubscriptionId) {
+      const paddle = getPaddleClient();
+      if (!paddle) {
+        client.release();
+        return res.status(500).json({ error: "Paddle not configured" });
+      }
+
+      try {
+        await paddle.subscriptions.cancel(paddleSubscriptionId, {
+          effectiveFrom: "next_billing_period",
+        });
+      } catch (error) {
+        console.error("Error canceling Paddle subscription:", error);
+        client.release();
+        return res.status(502).json({
+          error: "Failed to cancel subscription with billing provider",
+        });
+      }
+    }
+
+    await client.query(
+      `UPDATE subscriptions
+       SET status = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $2`,
+      ["canceled", userId],
+    );
+    client.release();
+
+    return res.json({
+      success: true,
+      message: "Subscription canceled successfully.",
+    });
+  } catch (error) {
+    if (client) client.release();
+    console.error("Error canceling subscription:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getPaddleConfig = async (_req, res) => {
   return res.json({
     success: true,
