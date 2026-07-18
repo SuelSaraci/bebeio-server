@@ -11,6 +11,7 @@ import milestoneRoutes from "./milestones.js";
 import aiRoutes from "./ai.js";
 import notificationRoutes from "./notifications.js";
 import subscriptionRoutes from "./subscriptions.js";
+import accountRoutes from "./account.js";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/milestones", milestoneRoutes);
 router.use("/ai", aiRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/subscriptions", subscriptionRoutes);
+router.use("/account", accountRoutes);
 
 export default router;

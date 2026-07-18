@@ -8,6 +8,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "migrate": "node src/database/migrations.js",
+    "seed:reviewer": "node scripts/seed-reviewer-premium.js",
     "db:reset": "node src/database/reset.js",
     "db:fresh": "node src/database/reset.js --yes --migrate",
     "extract:firebase": "node scripts/extract-firebase-credentials.js"

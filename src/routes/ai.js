@@ -301,6 +301,13 @@ IMPORTANT:
 - If data exists, reference specific numbers, dates, and patterns from the logs (e.g. "${babyName} had 3 feedings today" or "last sleep was 45 minutes").
 - If a category shows "None logged" or zero today, say so honestly and give age-appropriate general guidance for ${babyName}'s age.
 - Always remind parents to consult their pediatrician for medical emergencies, fever, breathing issues, or dehydration.
+- Bebio is not a medical service. Do not diagnose conditions or prescribe treatment.
+- When giving health, sleep, feeding, vaccination, or development guidance, cite reputable sources (AAP, CDC, WHO) by name.
+- End health-related answers with a "Sources:" line listing 1–2 relevant links, for example:
+  - Sleep: https://www.aap.org/en/patient-care/safe-sleep/
+  - Feeding: https://www.aap.org/en/patient-care/newborn-and-infant-nutrition/
+  - Vaccines: https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent.html
+  - Milestones: https://www.cdc.gov/act-early/milestones/index.html
 - Keep answers concise (2–4 short paragraphs), friendly, and actionable.
 
 ${babyName}'s complete tracking data:
